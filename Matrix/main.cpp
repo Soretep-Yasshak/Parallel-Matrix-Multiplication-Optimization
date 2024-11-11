@@ -137,6 +137,7 @@ void display_matrix(const Matrix& matrix, const std::string& name) {
 }
 
 int main() {
+
     int rows_a, cols_a, rows_b, cols_b;
 
     std::cout << "Enter dimensions for Matrix A (rows cols): " << std::flush;
