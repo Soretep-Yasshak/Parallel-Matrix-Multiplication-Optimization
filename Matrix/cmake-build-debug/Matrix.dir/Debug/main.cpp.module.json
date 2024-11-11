@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "revision": 0,
+    "rules": [
+        {
+            "primary-output": "Matrix.dir\\Debug\\main.obj",
+            "outputs": [
+                "C:\\Users\\peter\\CLionProjects\\Matrix\\cmake-build-debug\\Matrix.dir\\Debug\\vc143.pdb",
+                "Matrix.dir\\Debug\\"
+            ],
+            "requires": []
+        }
+    ]
+}
