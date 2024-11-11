@@ -8,6 +8,7 @@
 using Matrix = std::vector<std::vector<int>>;
 
 void multiply(const Matrix& A, const Matrix& B, Matrix& C, int start_row, int chunk_size) {
+
     const int cols_b        = B[0].size();
     const int cols_a        = A[0].size();
     const int end_row       = std::min(start_row + chunk_size, static_cast<int>(A.size()));

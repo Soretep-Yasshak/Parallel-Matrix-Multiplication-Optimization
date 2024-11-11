@@ -1,13 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\Users\peter\CLionProjects\Matrix\cmake-build-debug\CMakeFiles\fc7a15f8b594a94cb32fba5649170c89\generate.stamp.rule">
+    <CustomBuild Include="C:\Users\peter\OneDrive\Documents\GitHub\Parallel-Matrix-Multiplication-Optimization\Matrix\cmake-build-debug\CMakeFiles\414a8ac67f143848079c40a445cb35af\generate.stamp.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{63286810-293A-3104-8BA4-644D7C4BE480}</UniqueIdentifier>
+      <UniqueIdentifier>{9A8AD8C6-63B8-3DBD-B75E-31A14BB8D5DA}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
