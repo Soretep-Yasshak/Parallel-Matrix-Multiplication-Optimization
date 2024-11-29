@@ -2,8 +2,10 @@
 #include <vector>
 #include <thread>
 #include <random>
-#include <iomanip>
-#include <algorithm>
+
+/*Things to edit: threading, holding of Matrix, validation/checking/try-catch, memory management*/
+
+/*Goal is to expand this into an image based project where I take an image make it into matrix's and edit*/
 
 using Matrix = std::vector<std::vector<int>>;
 
@@ -33,8 +35,9 @@ void multiply(const Matrix& A, const Matrix& B, Matrix& C, int start_row, int ch
 
 Matrix parallel_matrix_multiply(const Matrix& A, const Matrix& B) {
 
-    const int rows_a = A.size();
-    const int cols_b = B[0].size();
+    const int rows_a    = A.size();
+    const int cols_b    = B[0].size();
+
     Matrix C(rows_a, std::vector<int>(cols_b, 0));
 
     // START OF THREADS, LOOK BACK AT THIS!
@@ -53,8 +56,11 @@ Matrix parallel_matrix_multiply(const Matrix& A, const Matrix& B) {
     }
 
     // Wait for threads to complete
-    std::for_each(threads.begin(), threads.end(),
-                  [](std::thread& t) { t.join(); });
+    for (auto & thread : threads) {
+
+        thread.join();
+
+    }
 
     return C;
 
@@ -84,8 +90,7 @@ Matrix generate_random_matrix(int rows, int cols) {
 
 Matrix get_matrix_input(int rows, int cols, const std::string& name) {
 
-    std::cout << "Input " << name << " manually? (y/n): ";
-    std::cout.flush();
+    std::cout << "Input " << name << " manually? If yes, input 1 by 1 (y/n): " << std::endl;
 
     char choice;
     std::cin >> choice;
@@ -100,8 +105,9 @@ Matrix get_matrix_input(int rows, int cols, const std::string& name) {
 
             for (int j = 0; j < cols; ++j) {
 
-                std::cout << name << "[" << i << "][" << j << "]: ";
+                std::cout << name << "[" << (i + 1) << "][" << (j + 1) << "]: " << std::endl;
                 std::cin >> matrix[i][j];
+
             }
 
         }
@@ -110,10 +116,28 @@ Matrix get_matrix_input(int rows, int cols, const std::string& name) {
 
     }
 
-    std::cout << name << " filled.";
-    std::cout.flush();
+    std::cout << name << " filled." << std::endl;
 
     return generate_random_matrix(rows, cols);
+
+}
+
+bool CheckMatrix(int& rows_a, int& cols_a, int& rows_b, int& cols_b) {
+
+    std::cout << "Enter dimensions for Matrix A (rows cols): " << std::endl;
+    std::cin >> rows_a >> cols_a;
+    std::cout << "Enter dimensions for Matrix B (rows cols): " << std::endl;
+    std::cin >> rows_b >> cols_b;
+
+    if (cols_a != rows_b) {
+
+        std::cerr << "Error: Matrix dimensions incompatible for multiplication.\n";
+
+        return false;
+
+    }
+
+    return true;
 
 }
 
@@ -125,42 +149,33 @@ void display_matrix(const Matrix& matrix, const std::string& name) {
 
         for (const auto& elem : row) {
 
-            std::cout << std::setw(4) << elem;
-
+            std::cout << elem << " ";
         }
 
         std::cout << '\n';
 
     }
 
-    std::cout << std::endl;
-
 }
+
 
 int main() {
 
     int rows_a, cols_a, rows_b, cols_b;
 
-    std::cout << "Enter dimensions for Matrix A (rows cols): " << std::flush;
-    std::cin >> rows_a >> cols_a;
-    std::cout << "Enter dimensions for Matrix B (rows cols): " << std::flush;
-    std::cin >> rows_b >> cols_b;
+    if (!CheckMatrix(rows_a, cols_a, rows_b, cols_b)) {
 
-    if (cols_a != rows_b) {
-
-        std::cerr << "Error: Matrix dimensions incompatible for multiplication.\n";
-
-        return 1;
+        return -1;
 
     }
 
-    auto A = get_matrix_input(rows_a, cols_a, "A");
-    auto B = get_matrix_input(rows_b, cols_b, "B");
+    Matrix A = get_matrix_input(rows_a, cols_a, "A");
+    Matrix B = get_matrix_input(rows_b, cols_b, "B");
 
     display_matrix(A, "Matrix A");
     display_matrix(B, "Matrix B");
 
-    auto C = parallel_matrix_multiply(A, B);
+    Matrix C = parallel_matrix_multiply(A, B);
     display_matrix(C, "Result Matrix C");
 
     return 0;

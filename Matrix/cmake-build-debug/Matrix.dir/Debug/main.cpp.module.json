@@ -5,7 +5,7 @@
         {
             "primary-output": "Matrix.dir\\Debug\\main.obj",
             "outputs": [
-                "C:\\Users\\peter\\CLionProjects\\Matrix\\cmake-build-debug\\Matrix.dir\\Debug\\vc143.pdb",
+                "C:\\Users\\peter\\OneDrive\\Documents\\GitHub\\Parallel-Matrix-Multiplication-Optimization\\Matrix\\cmake-build-debug\\Matrix.dir\\Debug\\vc143.pdb",
                 "Matrix.dir\\Debug\\"
             ],
             "requires": []

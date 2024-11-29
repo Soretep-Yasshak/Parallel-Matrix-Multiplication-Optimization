@@ -1,6 +1,6 @@
-^C:\USERS\PETER\CLIONPROJECTS\MATRIX\CMAKE-BUILD-DEBUG\CMAKEFILES\FC7A15F8B594A94CB32FBA5649170C89\GENERATE.STAMP.RULE
+^C:\USERS\PETER\ONEDRIVE\DOCUMENTS\GITHUB\PARALLEL-MATRIX-MULTIPLICATION-OPTIMIZATION\MATRIX\CMAKE-BUILD-DEBUG\CMAKEFILES\414A8AC67F143848079C40A445CB35AF\GENERATE.STAMP.RULE
 setlocal
-"C:\Program Files\JetBrains\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" -SC:/Users/peter/CLionProjects/Matrix -BC:/Users/peter/CLionProjects/Matrix/cmake-build-debug --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/peter/CLionProjects/Matrix/cmake-build-debug/Matrix.sln
+"C:\Program Files\JetBrains\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" -SC:/Users/peter/OneDrive/Documents/GitHub/Parallel-Matrix-Multiplication-Optimization/Matrix -BC:/Users/peter/OneDrive/Documents/GitHub/Parallel-Matrix-Multiplication-Optimization/Matrix/cmake-build-debug --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/peter/OneDrive/Documents/GitHub/Parallel-Matrix-Multiplication-Optimization/Matrix/cmake-build-debug/Matrix.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

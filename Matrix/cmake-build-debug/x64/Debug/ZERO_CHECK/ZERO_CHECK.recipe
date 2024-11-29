@@ -2,7 +2,7 @@
 <Project>
   <ProjectOutputs>
     <ProjectOutput>
-      <FullPath>C:\Users\peter\CLionProjects\Matrix\cmake-build-debug\x64\Debug\ZERO_CHECK</FullPath>
+      <FullPath>C:\Users\peter\OneDrive\Documents\GitHub\Parallel-Matrix-Multiplication-Optimization\Matrix\cmake-build-debug\x64\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
   </ProjectOutputs>
   <ContentFiles />
