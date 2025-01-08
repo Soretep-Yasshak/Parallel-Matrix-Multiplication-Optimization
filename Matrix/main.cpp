@@ -2,30 +2,64 @@
 #include <vector>
 #include <thread>
 #include <random>
+#include <stdexcept>
+#include <future>
+#include <algorithm>
+#include <memory>
 
 /*Things to edit: threading, holding of Matrix, validation/checking/try-catch, memory management*/
-
 /*Goal is to expand this into an image based project where I take an image make it into matrix's and edit*/
+//*update* Mostly done with goal.
 
-using Matrix = std::vector<std::vector<int>>;
+class MatrixData {
 
-void multiply(const Matrix& A, const Matrix& B, Matrix& C, int start_row, int chunk_size) {
+    std::unique_ptr<float[]>    data;
+    size_t                      rows;
+    size_t                      cols;
 
-    const int cols_b        = B[0].size();
-    const int cols_a        = A[0].size();
-    const int end_row       = std::min(start_row + chunk_size, static_cast<int>(A.size()));
+public:
 
-    for (int i = start_row; i < end_row; ++i) {
+    MatrixData(size_t r, size_t c) : data(std::make_unique<float[]>(r * c)), rows(r), cols(c) {}
+    float& at(size_t i, size_t j)             { return data[i * cols + j]; }
+    const float& at(size_t i, size_t j) const { return data[i * cols + j]; }
+    size_t getRows() const                    { return rows; }
+    size_t getCols() const                    { return cols; }
 
-        for (int k = 0; k < cols_a; ++k) {
+};
 
-            const int a_ik  = A[i][k];
+using Matrix = std::unique_ptr<MatrixData>;
 
-            for (int j = 0; j < cols_b; ++j) {
+inline Matrix create_matrix(size_t rows, size_t cols) {
 
-                C[i][j]    += a_ik * B[k][j];
+    return std::make_unique<MatrixData>(rows, cols);
+
+}
+
+void multiply_chunk(const Matrix& A, const Matrix& B, Matrix& C, size_t start_row, size_t end_row) {
+
+    const size_t cols_b        = B->getCols();
+    const size_t cols_a        = A->getCols();
+    std::vector<float> temp_row(cols_b, 0.0f);
+
+    for (size_t i = start_row; i < end_row; ++i) {
+
+        std::fill_n(temp_row.begin(), cols_b, 0.0f);
+
+        for (size_t k = 0; k < cols_a; ++k) {
+
+            const float a_ik   = A->at(i, k);
+
+            for (size_t j = 0; j < cols_b; ++j) {
+
+                temp_row[j]   += a_ik * B->at(k, j);
 
             }
+
+        }
+
+        for (size_t j = 0; j < cols_b; ++j) {
+
+            C->at(i, j)       = temp_row[j];
 
         }
 
@@ -35,30 +69,53 @@ void multiply(const Matrix& A, const Matrix& B, Matrix& C, int start_row, int ch
 
 Matrix parallel_matrix_multiply(const Matrix& A, const Matrix& B) {
 
-    const int rows_a    = A.size();
-    const int cols_b    = B[0].size();
+    if (A->getCols() != B->getRows()) {
 
-    Matrix C(rows_a, std::vector<int>(cols_b, 0));
-
-    // START OF THREADS, LOOK BACK AT THIS!
-    const unsigned int thread_count = std::thread::hardware_concurrency();
-    const int chunk_size = (rows_a + thread_count - 1) / thread_count;
-
-    std::vector<std::thread> threads;
-    threads.reserve(thread_count);
-
-    // This should just be creating a thread for the matrix
-    for (int i = 0; i < rows_a; i += chunk_size) {
-
-        threads.emplace_back(multiply, std::cref(A), std::cref(B),
-                           std::ref(C), i, chunk_size);
+        throw std::runtime_error("Matrix dimensions incompatible for multiplication");
 
     }
 
-    // Wait for threads to complete
-    for (auto & thread : threads) {
+    const size_t rows_a                  = A->getRows();
+    const size_t cols_b                  = B->getCols();
+    Matrix C                             = create_matrix(rows_a, cols_b);
 
-        thread.join();
+    unsigned int thread_count            = std::thread::hardware_concurrency();
+
+    if (thread_count == 0) {
+
+        thread_count                     = 1;
+
+    }
+
+    const size_t cache_line_size         = 64;
+    const size_t elements_per_cache_line = cache_line_size / sizeof(float);
+    const size_t min_chunk_size          = (elements_per_cache_line + cols_b - 1) / cols_b;
+    const size_t chunk_size              = std::max(min_chunk_size, (rows_a + thread_count - 1) / thread_count);
+
+    std::vector<std::future<void>> futures;
+    futures.reserve(thread_count);
+
+    for (size_t i = 0; i < rows_a; i += chunk_size) {
+
+        size_t end_row                   = std::min(i + chunk_size, rows_a);
+        futures.emplace_back(std::async(std::launch::async,
+            multiply_chunk, std::ref(A), std::ref(B), std::ref(C), i, end_row));
+
+    }
+
+    for (auto& future : futures) {
+
+        try {
+
+            future.get();
+
+        }
+
+        catch (const std::exception& e) {
+
+            throw std::runtime_error(std::string("Thread execution failed: ") + e.what());
+
+        }
 
     }
 
@@ -66,19 +123,19 @@ Matrix parallel_matrix_multiply(const Matrix& A, const Matrix& B) {
 
 }
 
-Matrix generate_random_matrix(int rows, int cols) {
+Matrix generate_random_matrix(size_t rows, size_t cols) {
 
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, 9);
+    std::uniform_real_distribution<float> dis(0, 9);
 
-    Matrix matrix(rows, std::vector<int>(cols));
+    Matrix matrix            = create_matrix(rows, cols);
 
-    for (auto& row : matrix) {
+    for (size_t i = 0; i < rows; ++i) {
 
-        for (auto& elem : row) {
+        for (size_t j = 0; j < cols; ++j) {
 
-            elem = dis(gen);
+            matrix->at(i, j) = dis(gen);
 
         }
 
@@ -88,25 +145,33 @@ Matrix generate_random_matrix(int rows, int cols) {
 
 }
 
-Matrix get_matrix_input(int rows, int cols, const std::string& name) {
+Matrix get_matrix_input(size_t rows, size_t cols, const std::string& name) {
 
-    std::cout << "Input " << name << " manually? If yes, input 1 by 1 (y/n): " << std::endl;
-
+    std::cout << "Input " << name << " manually? (y/n): ";
     char choice;
     std::cin >> choice;
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    Matrix matrix                = create_matrix(rows, cols);
 
     if (std::tolower(choice) == 'y') {
 
-        Matrix matrix(rows, std::vector<int>(cols));
-
         std::cout << "Enter " << name << " values:\n";
 
-        for (int i = 0; i < rows; ++i) {
+        for (size_t i = 0; i < rows; ++i) {
 
-            for (int j = 0; j < cols; ++j) {
+            for (size_t j = 0; j < cols; ++j) {
 
-                std::cout << name << "[" << (i + 1) << "][" << (j + 1) << "]: " << std::endl;
-                std::cin >> matrix[i][j];
+                std::cout << name << "[" << (i + 1) << "][" << (j + 1) << "]: ";
+                float value;
+
+                if (!(std::cin >> value)) {
+
+                    throw std::runtime_error("Invalid input");
+
+                }
+
+                matrix->at(i, j) = value;
 
             }
 
@@ -116,23 +181,33 @@ Matrix get_matrix_input(int rows, int cols, const std::string& name) {
 
     }
 
-    std::cout << name << " filled." << std::endl;
-
     return generate_random_matrix(rows, cols);
 
 }
 
-bool CheckMatrix(int& rows_a, int& cols_a, int& rows_b, int& cols_b) {
+bool CheckMatrix(size_t& rows_a, size_t& cols_a, size_t& rows_b, size_t& cols_b) {
 
-    std::cout << "Enter dimensions for Matrix A (rows cols): " << std::endl;
-    std::cin >> rows_a >> cols_a;
-    std::cout << "Enter dimensions for Matrix B (rows cols): " << std::endl;
-    std::cin >> rows_b >> cols_b;
+    std::cout << "Enter dimensions for Matrix A (rows cols): ";
+    if (!(std::cin >> rows_a >> cols_a)) {
+
+        throw std::runtime_error("Invalid dimensions for Matrix A");
+
+    }
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+    std::cout << "Enter dimensions for Matrix B (rows cols): ";
+    if (!(std::cin >> rows_b >> cols_b)) {
+
+        throw std::runtime_error("Invalid dimensions for Matrix B");
+
+    }
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     if (cols_a != rows_b) {
 
         std::cerr << "Error: Matrix dimensions incompatible for multiplication.\n";
-
         return false;
 
     }
@@ -145,11 +220,12 @@ void display_matrix(const Matrix& matrix, const std::string& name) {
 
     std::cout << "\n" << name << ":\n";
 
-    for (const auto& row : matrix) {
+    for (size_t i = 0; i < matrix->getRows(); ++i) {
 
-        for (const auto& elem : row) {
+        for (size_t j = 0; j < matrix->getCols(); ++j) {
 
-            std::cout << elem << " ";
+            std::cout << matrix->at(i, j) << " ";
+
         }
 
         std::cout << '\n';
@@ -158,26 +234,36 @@ void display_matrix(const Matrix& matrix, const std::string& name) {
 
 }
 
-
 int main() {
 
-    int rows_a, cols_a, rows_b, cols_b;
+    try {
 
-    if (!CheckMatrix(rows_a, cols_a, rows_b, cols_b)) {
+        size_t rows_a, cols_a, rows_b, cols_b;
 
-        return -1;
+        if (!CheckMatrix(rows_a, cols_a, rows_b, cols_b)) {
+
+            return -1;
+
+        }
+
+        Matrix A = get_matrix_input(rows_a, cols_a, "A");
+        Matrix B = get_matrix_input(rows_b, cols_b, "B");
+
+        display_matrix(A, "Matrix A");
+        display_matrix(B, "Matrix B");
+
+        Matrix C = parallel_matrix_multiply(A, B);
+        display_matrix(C, "Result Matrix C");
+
+        return 0;
 
     }
 
-    Matrix A = get_matrix_input(rows_a, cols_a, "A");
-    Matrix B = get_matrix_input(rows_b, cols_b, "B");
+    catch (const std::exception& e) {
 
-    display_matrix(A, "Matrix A");
-    display_matrix(B, "Matrix B");
+        std::cerr << "Error: " << e.what() << std::endl;
+        return 1;
 
-    Matrix C = parallel_matrix_multiply(A, B);
-    display_matrix(C, "Result Matrix C");
-
-    return 0;
+    }
 
 }
